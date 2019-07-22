@@ -23,9 +23,9 @@
 #include <LoRa.h>
 
 
-#define ESP8266  // comment if you want to use the sketch on a Arduino board
+//#define ESP8266  // comment if you want to use the sketch on a Arduino board
 // #define MQTT     // uncomment if you want to foreward the message via MQTT
-#define OLED        // comment if you do nto have a OLED display
+//#define OLED        // comment if you do nto have a OLED display
 
 const long freq = 868E6;
 const int SF = 9;
@@ -54,12 +54,12 @@ PubSubClient client(wifiClient);
 #endif
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("LoRa Receiver");
 #ifdef ESP8266
   LoRa.setPins(16, 17, 15); // set CS, reset, IRQ pin
 #else
-  LoRa.setPins(10, A0, 2); // set CS, reset, IRQ pin
+  LoRa.setPins(18, 14, 26); // set CS, reset, IRQ pin
 #endif
 #ifdef OLED
   display.init();
@@ -222,4 +222,3 @@ void displayText(int x, int y, String tex, byte font ) {
   display.drawString(x, y, tex);
 }
 #endif
-

@@ -27,11 +27,11 @@ DEALINGS IN THE SOFTWARE.
 
 #include <SPI.h>
 #include <LoRa.h>
-#include <Adafruit_BMP085.h>
+//#include <Adafruit_BMP085.h>
 
 
 #ifndef ESP8266
-#include <LowPower.h>
+//#include <LowPower.h>
 
 #endif
 
@@ -49,13 +49,14 @@ Adafruit_BMP085 bmp;
 #endif
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   while (!Serial);
 
 #ifdef ESP8266
   LoRa.setPins(16, 17, 15); // set CS, reset, IRQ pin
 #else
-  LoRa.setPins(10, A0, 2); // set CS, reset, IRQ pin
+  //LoRa.setPins(10, A0, 2); // set CS, reset, IRQ pin
+  LoRa.setPins(18, 14, 26); // set CS, reset, IRQ pin
 #endif
 
   Serial.println("LoRa Sender");
@@ -67,7 +68,7 @@ void setup() {
   LoRa.setSpreadingFactor(SF);
   //  LoRa.setSignalBandwidth(bw);
 
-#ifdef BMP
+/*#ifdef BMP
   if (!bmp.begin()) {
     Serial.println("Could not find a valid BMP085 sensor, check wiring!");
     while (1) {}
@@ -82,7 +83,7 @@ void setup() {
 #ifdef INTER
   pinMode(3, INPUT);
   Serial.println("Interrupt driven");
-#endif
+#endif*/
 
   Serial.print("Frequency ");
   Serial.print(freq);
@@ -94,7 +95,7 @@ void setup() {
 
 void loop() {
   char message[90];
-  int Vcc = readVcc()/10;
+  int Vcc = 42;//readVcc()/10;
 
 #ifdef INTER
   attachInterrupt(1, wakeUp, RISING);
@@ -114,7 +115,7 @@ void loop() {
 
     Serial.println(" refused ");
     Serial.print(nackCounter);
-    LoRa.sleep();
+    //LoRa.sleep();
     delay(1000);
     sendMessage(message);
     nackCounter++;
@@ -129,7 +130,7 @@ void loop() {
     Serial.println("Acknowledged ");
   }
   counter++;
-  LoRa.sleep();
+  //LoRa.sleep();
   //LoRa.idle();
 
 #ifdef ESP8266
@@ -138,25 +139,25 @@ void loop() {
   Serial.println("Falling asleep");
   delay(100);
 #ifdef INTER
-  LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
+  //LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
   detachInterrupt(1);
 #else
-  LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
-  delay(8000);
+  //LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
+  //delay(8000);
 #endif
 #endif
 }
 
 long readVcc() {
   long result;
-  // Read 1.1V reference against AVcc
+  /*// Read 1.1V reference against AVcc
   ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
   delay(2); // Wait for Vref to settle
   ADCSRA |= _BV(ADSC); // Convert
   while (bit_is_set(ADCSRA, ADSC));
   result = ADCL;
   result |= ADCH << 8;
-  result = 1126400L / result; // Back-calculate AVcc in mV
+  result = 1126400L / result; // Back-calculate AVcc in mV*/
   return result;
 }
 
@@ -207,4 +208,3 @@ void wakeUp()
   Serial.println("wakeup");
   delay(100);
 }
-
