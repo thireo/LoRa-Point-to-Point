@@ -36,11 +36,14 @@ DEALINGS IN THE SOFTWARE.
 #endif
 
 const long freq = 868E6;
-const int SF = 9;
-const long bw = 125E3;
+const int SF = 12;
+const long bw = 62.5E3;
+const int txPower = 20;
+const int syncWord = 0x2A;
 long zeroAltitude;
 
 int counter = 1, messageLostCounter = 0;
+int atcount = 0;
 //#define BMP
 // #define INTER
 
@@ -66,7 +69,11 @@ void setup() {
     while (1);
   }
   LoRa.setSpreadingFactor(SF);
-  //  LoRa.setSignalBandwidth(bw);
+  LoRa.setSignalBandwidth(bw);
+  LoRa.setTxPower(txPower);
+  LoRa.setSyncWord(syncWord);
+  LoRa.setCodingRate4(8);
+  
 
 /*#ifdef BMP
   if (!bmp.begin()) {
@@ -94,9 +101,8 @@ void setup() {
 }
 
 void loop() {
-  char message[90];
-  int Vcc = 42;//readVcc()/10;
-
+  char message[16];
+  //int Vcc = atcount+1;//readVcc()/10;
 #ifdef INTER
   attachInterrupt(1, wakeUp, RISING);
 #endif
@@ -106,13 +112,15 @@ void loop() {
   int alti = (int)bmp.readAltitude(zeroAltitude);
    sprintf(message, "{\"Alt\":\"%3d\",\"Count\":\"%03d\",\"Lost\":\"%3d\",xxx}", alti, counter, messageLostCounter);
 #else
-  sprintf(message, "{\"Vcc\":\"%3d\",\"Count\":\"%03d\",\"Lost\":\"%03d\",xxx}", Vcc, counter, messageLostCounter);
+  //sprintf(message, "{\"Vcc\":\"%3d\",\"Count\":\"%03d\",\"Lost\":\"%03d\",xxx}", Vcc, counter, messageLostCounter);
+  sprintf(message,"%3d,%3d,%3d",atcount, counter, messageLostCounter);
 #endif
 
   sendMessage(message);
   int nackCounter = 0;
   while (!receiveAck(message) && nackCounter <= 5) {
-
+    atcount++;
+    sprintf(message,"%3d,%3d,%3d",atcount, counter, messageLostCounter);
     Serial.println(" refused ");
     Serial.print(nackCounter);
     //LoRa.sleep();

@@ -25,16 +25,19 @@
 
 //#define ESP8266  // comment if you want to use the sketch on a Arduino board
 // #define MQTT     // uncomment if you want to foreward the message via MQTT
-//#define OLED        // comment if you do nto have a OLED display
+#define OLED        // comment if you do nto have a OLED display
 
 const long freq = 868E6;
-const int SF = 9;
-const long bw = 125E3;
+const int SF = 12;
+const long bw = 62.5E3;
+const int txPower = 20;
+const int syncWord = 0x2A;
 
 
 #ifdef OLED
+//#include "Adafruit_SSD1306.h"
 #include "SSD1306.h"
-SSD1306  display(0x3d, 4, 5);
+SSD1306  display(0x3c, 4, 15);
 #endif
 
 #ifdef MQTT
@@ -68,8 +71,14 @@ void setup() {
 
   display.clear();
   display.setTextAlignment(TEXT_ALIGN_LEFT);
-  display.setFont(ArialMT_Plain_16);
-  display.drawString(0, 10, "Mailbox");
+  display.setFont(ArialMT_Plain_10);
+  display.drawString(0, 10, "LoRa");
+  //display.sendCommand(SETCONTRAST);
+  //display.sendCommand(255);
+  display.setContrast(100,241,64);
+  display.setBrightness(255);
+
+  
   display.display();
 #endif
 
@@ -80,7 +89,10 @@ void setup() {
   }
 
   LoRa.setSpreadingFactor(SF);
-  // LoRa.setSignalBandwidth(bw);
+  LoRa.setSignalBandwidth(bw);
+  LoRa.setTxPower(txPower);
+  LoRa.setSyncWord(syncWord);
+  LoRa.setCodingRate4(8);
   Serial.println("LoRa Started");
 
 #ifdef MQTT
@@ -123,24 +135,27 @@ void loop() {
     String jsonString = message;
     jsonString.replace("xxx", rssi);
 
-    int ii = jsonString.indexOf("Count", 1);
-    String count = jsonString.substring(ii + 8, ii + 11);
+    //int ii = jsonString.indexOf(",", 1);
+    String count = jsonString.substring(4, 4 + 3);
     counter = count.toInt();
     if (counter - lastCounter == 0) Serial.println("Repetition");
     lastCounter = counter;
 
 
     sendAck(message);
-    String value1 = jsonString.substring(8, 11);  // Vcc or heighth
+    String value1 = String(LoRa.packetSnr());//jsonString.substring(8, 11);  // Vcc or heighth
     String value2 = jsonString.substring(23, 26); //counter
 #ifdef OLED
     display.clear();
+    display.setColor(WHITE);
+    display.setFont(ArialMT_Plain_10);
     display.setTextAlignment(TEXT_ALIGN_RIGHT);
-    displayText(40, 0, value1, 3);
+    displayText(40, 0, value1, 1);
     display.setTextAlignment(TEXT_ALIGN_RIGHT);
-    displayText(120, 0, String(LoRa.packetRssi()), 3);
+    displayText(120, 0, String(LoRa.packetRssi()), 2);
     display.setTextAlignment(TEXT_ALIGN_CENTER);
-    displayText(60, 35, count, 3);
+    displayText(60, 35, message, 2);
+    display.setBrightness(255);
     display.display();
 #endif
 
@@ -199,8 +214,12 @@ void sendAck(String message) {
   LoRa.endPacket();
   Serial.print(message);
   Serial.print(" ");
-  Serial.print("Ack Sent: ");
-  Serial.println(check);
+  //Serial.print("Ack Sent: ");
+  //Serial.print(check);
+  Serial.print("- RSSI: ");
+  Serial.print(LoRa.packetRssi());
+  Serial.print(" - SNR: ");
+  Serial.println(LoRa.packetSnr());
 }
 
 #ifdef OLED
